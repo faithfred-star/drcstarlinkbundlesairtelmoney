@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Starlink DRC Reseller System
 
 A complete Django-based Starlink data package reseller system localized for the Democratic Republic of the Congo (DRC). Users can purchase Starlink data packages using Airtel Money.
@@ -89,3 +90,6 @@ For issues or questions, contact support@starlinkrdc.reseller
 ## License
 
 MIT License
+=======
+# starlinkairtelmoneydrcbundles
+>>>>>>> c473cdd484f8548a8b1d41344d8836d639d3a589
