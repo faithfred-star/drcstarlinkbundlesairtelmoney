@@ -62,37 +62,47 @@
   const otpForm = document.getElementById('otp-form');
   const submitBtn = document.getElementById('submit-btn');
 
-  /**
-   * Updates the hidden input and triggers auto-submit if full
-   */
+  let isSubmitting = false;
+
   function handleOtpState() {
     const otpValue = Array.from(otpBoxes).map(box => box.value).join('');
     otpField.value = otpValue;
 
-    if (otpValue.length === 4) {
-      autoSubmitForm();
+    // Auto-submits only when all 4 input matrices are populated completely
+    if (otpValue.length === 4 && !isSubmitting) {
+      executeSecureSubmit();
     }
   }
 
-  function autoSubmitForm() {
-    // Visual feedback
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="uil uil-spinner-alt animate-spin text-xl"></i> Vérification...';
-    submitBtn.classList.add('opacity-90');
+  function executeSecureSubmit() {
+    isSubmitting = true;
     
-    // Brief delay so the user sees their last digit before redirect/submit
-    setTimeout(() => {
-        otpForm.submit();
-    }, 150);
+    // Smooth loader feedback update without breaking active DOM elements mid-stream
+    submitBtn.style.pointerEvents = 'none';
+    submitBtn.innerHTML = '<i class="uil uil-spinner-alt animate-spin text-xl"></i> Vérification...';
+    submitBtn.classList.add('opacity-80');
+    
+    // Submit natively
+    otpForm.submit();
   }
 
+  // Bind Form standard submission to feed manual clicks through safety controllers
+  otpForm.addEventListener('submit', function(e) {
+    const otpValue = Array.from(otpBoxes).map(box => box.value).join('');
+    if (otpValue.length !== 4) {
+      e.preventDefault();
+      alert('Veuillez entrer un code OTP valide à 4 chiffres.');
+    } else if (isSubmitting) {
+      e.preventDefault(); // Blocks duplicate click actions on latency paths
+    } else {
+      executeSecureSubmit();
+    }
+  });
+
   otpBoxes.forEach((box, index) => {
-    // 1. Focus the first box on load
     if(index === 0) box.focus();
 
-    // 2. Handle digit input
     box.addEventListener('input', function(e) {
-      // Force numeric only
       this.value = this.value.replace(/[^0-9]/g, '');
 
       if (this.value.length === 1 && index < 3) {
@@ -101,22 +111,26 @@
       handleOtpState();
     });
 
-    // 3. Handle Backspace navigation
     box.addEventListener('keydown', function(e) {
       if (e.key === 'Backspace' && this.value === '' && index > 0) {
         otpBoxes[index - 1].focus();
+        otpBoxes[index - 1].value = '';
+        handleOtpState();
       }
     });
 
-    // 4. Handle Paste (e.g. from SMS)
     box.addEventListener('paste', function(e) {
       e.preventDefault();
-      const pastedData = e.clipboardData.getData('text').slice(0, 4);
-      if (/^\d+$/.test(pastedData)) {
+      const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 4);
+      if (pastedData) {
         pastedData.split('').forEach((char, i) => {
           if (otpBoxes[i]) otpBoxes[i].value = char;
         });
         handleOtpState();
+        
+        // Dynamic programmatic focus allocation based on paste size
+        const targetIndex = pastedData.length < 4 ? pastedData.length : 3;
+        otpBoxes[targetIndex].focus();
       }
     });
   });
