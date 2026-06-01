@@ -17,9 +17,13 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-chang
 # Automatically switches to False in production if you configure it on Render
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# Allows your Render URL to access the site securely
-ALLOWED_HOSTS = ["*"]
 
+# Allows local testing and your live Render deployment to access the application securely
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'starlinkairtelmoneydrcbundles.onrender.com',
+]
 
 # Application definition
 INSTALLED_APPS = [
